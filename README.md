@@ -9,7 +9,7 @@ This tool is readily accessible via a web browser at <https://kubo-azu.shinyapps
 
 This repository contains the source code for the Shiny app accompanying the paper as follows:
 
-Kubota, A. & Tajima, A., *Bio-protocol*, (2025). <https://doi.org/10.21769/BioProtoc.5513>.
+Kubota, A. and Tajima, A. (2025). *Bio-protocol*, 15(1384). <https://doi.org/10.21769/BioProtoc.5513>.
 
 **Please <ins>cite this paper</ins> if you use this app or code in your research.**
 
