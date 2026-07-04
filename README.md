@@ -1,6 +1,8 @@
 # 🛟 Click-Prep: Data Formatter for Click-qPCR
 Click-Prep is an interactive web application built with R and Shiny, designed to easily reformat and clean raw data files exported from qPCR machines into the standardized input format required for the downstream relative quantification analysis tool, [Click-qPCR](https://kubo-azu.shinyapps.io/Click-qPCR/).
 
+[日本語版のユーザーガイドはこちら (Read this document in Japanese)](README_jp.md)
+
 By providing an intuitive GUI, Click-Prep eliminates tedious data preprocessing steps—such as error-prone copy-pasting in Excel or manually merging multiple plate datasets—allowing experimental biologists to prepare their data safely, accurately, and efficiently.
 
 This tool is readily accessible via a web browser at <https://kubo-azu.shinyapps.io/Click-Prep/>, requiring no local installation for end-users.
