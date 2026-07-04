@@ -59,8 +59,8 @@ All temporary files and cached data are automatically and completely destroyed i
 Your input data, analytical conditions, and formatting results remain strictly confidential. No data is collected, logged, or shared with any third parties.
 
 
-## 🔧 Licence
-This tool is under MIT licence.
+## 🔧 License
+This tool is under MIT license.
 
 
 ## ✉️ Contact
