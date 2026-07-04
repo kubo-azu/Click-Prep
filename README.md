@@ -64,4 +64,4 @@ This tool is under MIT licence.
 
 
 ## ✉️ Contact
-Feel free to use GitHub Discussions.
+Feel free to use [GitHub Discussions](https://github.com/kubo-azu/Click-Prep/discussions).
