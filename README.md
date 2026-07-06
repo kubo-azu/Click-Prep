@@ -16,9 +16,11 @@ Kubota, A. and Tajima, A. (2025). *Bio-protocol*, 15(1384). <https://doi.org/10.
 **Please <ins>cite this paper</ins> if you use this app or code in your research.**
 
 ## 🌟 Key Features
-Interactive Column Mapping: Easily link machine-specific column headers to the required standard categories (Sample, Group, Gene, Cq) using simple drop-down menus.
+Interactive Column Mapping: Easily link machine-specific column headers to the required standard categories (sample, group, gene, Cq) using simple drop-down menus.
 
 Manual Group Assignment: If your raw data lacks a 'Group' column, you can interactively define experimental conditions and assign them to your samples directly within the app.
+
+Outlier Removal: Visually inspect your replicate data and interactively select and delete anomalous rows prior to calculation. The tool ensures full user control by deliberately not applying automated filtering.
 
 Mean Cq Calculation: Automatically calculates the mean Cq values for technical replicates (identical sample and gene combinations), safely handling missing values (NAs) without crashing.
 
@@ -36,9 +38,9 @@ Review the app's overview, basic instructions, and privacy/security policy.
 
 Upload your raw qPCR output file (.csv, .txt, .tsv, .xlsx). Use the 'Skip' option to bypass any machine metadata rows at the top. Map your columns to the required format and, if needed, assign groups manually. A status panel will notify you when all mapping requirements are met.
 
-#### <b>Mean Cq Calculation & Download:</b>
+#### <b>Outlier Removal & Mean Cq Calculation:</b>
 
-Once column mapping is fully completed, proceed to this tab to preview the calculated results. You can download either the "Formatted CSV (All Reps)" or the averaged "Mean Cq CSV".
+Once column mapping is fully completed, proceed to this tab to visually inspect your replicate data. Please note that this app does NOT automatically filter outliers. You can manually select and delete any anomalous rows from the table. Once reviewed, calculate the mean Cq values for your replicates and download the finalized CSV files.
 
 #### <b>Advanced - Input CSV Integration:</b>
 
