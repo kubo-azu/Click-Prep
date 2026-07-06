@@ -45,7 +45,7 @@ ui <- fluidPage(
           tags$br(),
           "Preprint will be available soon."
         ),
-        div(style = "text-align: left; margin-top: 10px; font-size: 17px; color: #555;", "🧬 App Version: v1.0.0 🧬"),
+        div(style = "text-align: left; margin-top: 10px; font-size: 17px; color: #555;", "🧬 App Version: v1.1.0 🧬"),
         div(align = "left", style = "margin-bottom: 3px;",
             tags$a(href = "https://github.com/kubo-azu/Click-Prep", target = "_blank", icon("github"), style = "font-size: 17px;", "Source code and documentation are available on GitHub"))
       )
@@ -63,7 +63,7 @@ ui <- fluidPage(
                         tags$ol(style = "font-size: 17px; color: #333; line-height: 1.5;",
                                 tags$li(strong("File Trimming Function: "), "Upload your raw data file (.csv, .txt, .tsv, .xlsx). Use the 'Skip' option to remove any machine metadata rows at the top. Then, map your file's columns to the required 'sample', 'group', 'gene', and 'Cq' categories."),
                                 tags$li(strong("Manual Group Assignment: "), "If your raw data lacks a 'group' column, select '[Assign groups manually]' in the mapping section to define and assign experimental groups interactively within the app."),
-                                tags$li(strong("Mean Cq Calculation & Download: "), "Once all columns are properly mapped, proceed to this tab to review the automatically calculated mean Cq values (grouped by sample and gene) and download the formatted CSV files."),
+                                tags$li(strong("Outlier Removal & Mean Cq Calculation: "), "Proceed to this tab to visually inspect your replicate data. Please note that this app does NOT automatically filter outliers. You can manually select and delete any anomalous rows from the table. Once reviewed, calculate the mean Cq values for your replicates and download the finalized CSV files."),
                                 tags$li(strong("Advanced - Input CSV Integration: "), "If you have multiple formatted CSV files (e.g., from different qPCR plates), you can merge them into a single dataset in this tab.")
                         ),
                         br(),
@@ -102,9 +102,9 @@ ui <- fluidPage(
                             uiOutput("mapping_ui"),
                             uiOutput("manual_group_wrapper"),
                             
-                            br(), hr(style = "border-top: 1px solid #ccc;"),
+                            hr(style = "border-top: 1px solid #ccc;"),
                             div(style = "text-align: left;",
-                                actionButton("reset_app", "Start Over / Reset All", icon = icon("sync-alt"), class = "btn-danger", style = "margin-bottom: 15px;")
+                                actionButton("reset_app", "Start Over / Reset All", icon = icon("sync-alt"), class = "btn-danger", style = "margin-top: 5px; margin-bottom: 10px;")
                             )
                ),
                
@@ -121,23 +121,38 @@ ui <- fluidPage(
                          p("Ensure there are no missing values in the selected columns.", style = "font-size: 16px;"),
                          DT::dataTableOutput("formatted_preview"),
                          
-                         uiOutput("status_msg")
+                         uiOutput("status_msg"),
+                         
+                         br(), br()
                )
              )
     ),
     
     # 3rd tab
-    tabPanel("Mean Cq Calculation & Download",
+    tabPanel("Outlier Removal & Mean Cq Calculation",
              br(),
              fluidRow(
                column(width = 12,
-                      h4("📊 Mean Cq Data Preview 📊"),
-                      p("Calculated mean Cq values for identical samples (grouped by sample and gene).", style =  "font-size: 16px;"),
-                      DT::dataTableOutput("mean_preview"),
+                      h4("🔬 3. Manual Outlier Removal 🔬", style = "font-weight: bold;"),
+                      p("This table displays all replicate data. This tool does not automatically detect outliers. Please visually inspect your data, click to select any anomalous rows, and press the 'Delete Selected Rows' button.", style = "font-size: 16px;"),
                       
-                      hr(),
-                      h4("3. Download", style = "font-weight: bold;"),
-                      uiOutput("download_ui")
+                      DT::dataTableOutput("qc_preview"),
+                      
+                      div(style = "margin-top: 25px; margin-bottom: 30px; display: flex; align-items: center; gap: 10px;",
+                          actionButton("delete_outlier_btn", "Delete Selected Rows", class = "btn-danger", icon = icon("trash")),
+                          actionButton("calc_mean_btn", "Calculate Mean Cq", class = "btn-primary", icon = icon("calculator")),
+                          
+                          uiOutput("qc_download_ui")
+                      ),
+                      
+                      hr(style = "border-top: 2px solid #eee;"),
+                      
+                      h4("📊 4. Mean Cq Data Preview 📊", style = "font-weight: bold;"),
+                      p("The calculated results will appear here once you click the 'Calculate Mean Cq' button.", style = "font-size: 16px;"),
+                      DT::dataTableOutput("mean_preview"),
+                      br(),
+                      uiOutput("mean_download_ui"),
+                      br(), br()
                )
              )
     ),
@@ -150,13 +165,15 @@ ui <- fluidPage(
                             h4("Upload Multiple CSVs", style = "font-weight: bold;"),
                             p("Select multiple fully formatted CSV files (or Mean Cq CSV files) to merge them into a single dataset.", style = "font-size: 16px;"),
                             
-                            div(style = "background-color: #fff3cd; padding: 10px; border-radius: 5px; border-left: 4px solid #ffc107; margin-bottom: 15px; font-size: 13px; color: #856404;",
-                                strong(icon("exclamation-triangle"), " Important:"), " Do not mix 'All Reps' files with 'Mean Cq' files. Only merge files of the exact same type."
+                            div(style = "background-color: #fff3cd; padding: 10px; border-radius: 5px; border-left: 4px solid #ffc107; margin-bottom: 15px; font-size: 15px; color: #856404;",
+                                strong(icon("exclamation-triangle"), " Important:"), " Do not mix different types of CSV files. Generally, 'Mean Cq CSV' files are recommended for this function."
                             ),
                             
-                            fileInput("merge_files", "Choose CSV Files", 
+                            fileInput("merge_files", "Choose CSV Files (Upload multiple times to append)", 
                                       multiple = TRUE, 
                                       accept = c(".csv")),
+                            
+                            uiOutput("accumulated_files_ui"),
                             
                             hr(),
                             uiOutput("merge_download_ui")
@@ -164,7 +181,7 @@ ui <- fluidPage(
                
                mainPanel(width = 6,
                          h4("⚡️ Merged Data Preview ⚡️", style =  "margin-top: 25px;"),
-                         p("Preview of the combined dataset ready for Click-qPCR analysis.", style = "font-size: 16px;"),
+                         p("Preview of the combined dataset ready for Click-qPCR.", style = "font-size: 16px;"),
                          DT::dataTableOutput("merged_preview")
                )
              )
@@ -175,7 +192,12 @@ ui <- fluidPage(
 # 3. Define Server
 server <- function(input, output, session) {
   
+  # Create a specific temp directory for this session's merged files
+  merge_temp_dir <- file.path(tempdir(), paste0("merge_", session$token))
+  dir.create(merge_temp_dir, showWarnings = FALSE)
+  
   session$onSessionEnded(function() {
+    unlink(merge_temp_dir, recursive = TRUE)
     rm(list = ls())
     gc()
   })
@@ -472,10 +494,11 @@ server <- function(input, output, session) {
     if (is_complete) {
       div(style = "margin-top: 20px; padding: 15px; background-color: #d4edda; border-color: #c3e6cb; color: #155724; border-radius: 5px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);",
           h4(strong(icon("check-circle"), " Mapping Complete!")),
-          p(style = "font-size: 16px; margin-bottom: 0;", 
+          p(style = "font-size: 16px; margin-bottom: 15px;", 
             "You are ready to go! Please proceed to the ", 
-            strong("Mean Cq Calculation & Download"), 
-            " tab to view results and download your data.")
+            strong("Outlier Removal & Mean Cq Calculation"), 
+            " tab, or download the raw formatted data below."),
+          downloadButton("download_raw_formatted_csv", "Download Formatted CSV (All Reps)", class = "btn-success")
       )
     } else {
       div(style = "margin-top: 20px; padding: 15px; background-color: #fff3cd; border-color: #ffeeba; color: #856404; border-radius: 5px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);",
@@ -486,9 +509,84 @@ server <- function(input, output, session) {
     }
   })
   
+  output$download_raw_formatted_csv <- downloadHandler(
+    filename = function() {
+      paste0("formatted_all_reps_for_Click-qPCR_", format(Sys.time(), "%Y%m%d_%H%M"), ".csv")
+    },
+    content = function(file) {
+      req(formatted_data())
+      write.csv(formatted_data(), file, row.names = FALSE, na = "")
+    }
+  )
+  
+  # --- Variables and processing for Tab 3: Outlier Removal & Mean Cq Calculation ---
+  qc_data <- reactiveVal(NULL)      
+  mean_calculated <- reactiveVal(FALSE) 
+  
+  observeEvent(formatted_data(), {
+    qc_data(formatted_data())
+    mean_calculated(FALSE)
+  })
+  
+  output$qc_preview <- DT::renderDataTable({
+    df <- qc_data()
+    if (is.null(df)) {
+      return(datatable(data.frame(Message = "Please complete column mapping in the 'File Trimming' tab first."), rownames = FALSE, options=list(dom='t')))
+    }
+    
+    DT::datatable(
+      df, 
+      selection = 'multiple', 
+      options = list(
+        scrollX = TRUE, 
+        scrollY = "300px", 
+        paging = FALSE, 
+        dom = 'ft', 
+        order = list(list(0, 'asc'), list(2, 'asc')), 
+        columnDefs = list(list(className = 'dt-left', targets = "_all"))
+      ), 
+      rownames = FALSE
+    )
+  })
+  
+  output$qc_download_ui <- renderUI({
+    req(qc_data())
+    downloadButton("download_qc_csv", "Download This CSV", class = "btn-default")
+  })
+  
+  output$download_qc_csv <- downloadHandler(
+    filename = function() {
+      paste0("cleaned_all_reps_for_Click-qPCR_", format(Sys.time(), "%Y%m%d_%H%M"), ".csv")
+    },
+    content = function(file) {
+      req(qc_data())
+      write.csv(qc_data(), file, row.names = FALSE, na = "")
+    }
+  )
+  
+  observeEvent(input$delete_outlier_btn, {
+    sel <- input$qc_preview_rows_selected
+    if (length(sel) > 0) {
+      df <- qc_data()
+      df <- df[-sel, ]
+      qc_data(df)
+      mean_calculated(FALSE) 
+      
+      proxy <- dataTableProxy("qc_preview")
+      selectRows(proxy, NULL) 
+    } else {
+      showNotification("Please select the rows you want to delete from the table first.", type = "warning")
+    }
+  })
+  
+  observeEvent(input$calc_mean_btn, {
+    req(qc_data())
+    mean_calculated(TRUE)
+  })
+  
   mean_data <- reactive({
-    req(formatted_data())
-    df <- formatted_data()
+    req(mean_calculated(), qc_data())
+    df <- qc_data()
     
     df %>%
       group_by(sample, gene) %>%
@@ -501,15 +599,15 @@ server <- function(input, output, session) {
   })
   
   output$mean_preview <- DT::renderDataTable({
-    df <- mean_data()
-    if (is.null(df)) {
-      return(datatable(data.frame(Message = "Please complete all column mappings in the 'File Trimming' tab."), rownames = FALSE, options=list(dom='t')))
+    if (!mean_calculated()) {
+      return(datatable(data.frame(Message = "Please click the 'Calculate Mean Cq' button above."), rownames = FALSE, options=list(dom='t')))
     }
+    
     DT::datatable(
-      df, 
+      mean_data(), 
       options = list(
         scrollX = TRUE, 
-        scrollY = "400px", 
+        scrollY = "300px", 
         paging = FALSE, 
         dom = 't', 
         ordering = FALSE,
@@ -519,34 +617,13 @@ server <- function(input, output, session) {
     )
   })
   
-  output$download_ui <- renderUI({
-    if (!is.null(formatted_data()) && !is.null(mean_data())) {
-      warn_msg <- NULL
-      if (input$col_group == "MANUAL_ASSIGN" && !is.null(group_assignment()) && "Unassigned" %in% group_assignment()$Group) {
-        warn_msg <- p(style = "color: #d9534f; font-weight: bold;", icon("exclamation-triangle"), " Warning: Some samples are still 'Unassigned'.")
-      }
-      
-      div(
-        warn_msg,
-        div(style = "display: flex; gap: 15px;",
-            downloadButton("download_formatted_csv", "Download Formatted CSV (All Reps)", class = "btn-default btn-lg"),
-            downloadButton("download_mean_csv", "Download Mean Cq CSV", class = "btn-success btn-lg")
-        )
-      )
-    } else {
-      p(style = "color: #777;", "Download buttons will appear once all columns are mapped in the 'File Trimming' tab.")
-    }
+  output$mean_download_ui <- renderUI({
+    if (!mean_calculated() || is.null(mean_data())) return(NULL)
+    
+    div(style = "margin-top: 15px;",
+        downloadButton("download_mean_csv", "Download Mean Cq CSV (Ready for Click-qPCR)", class = "btn-success btn-lg")
+    )
   })
-  
-  output$download_formatted_csv <- downloadHandler(
-    filename = function() {
-      paste0("formatted_for_Click-qPCR_", format(Sys.time(), "%Y%m%d_%H%M"), ".csv")
-    },
-    content = function(file) {
-      req(formatted_data())
-      write.csv(formatted_data(), file, row.names = FALSE, na = "")
-    }
-  )
   
   output$download_mean_csv <- downloadHandler(
     filename = function() {
@@ -558,17 +635,52 @@ server <- function(input, output, session) {
     }
   )
   
-  merged_data <- reactive({
+  # --- Tab 4: Input CSV Integration ---
+  accumulated_files <- reactiveVal(character(0))
+  accumulated_names <- reactiveVal(character(0))
+  
+  observeEvent(input$merge_files, {
     req(input$merge_files)
+    new_files <- input$merge_files
     
-    on.exit({
-      for(f in input$merge_files$datapath) {
-        if (file.exists(f)) unlink(f)
+    curr_paths <- accumulated_files()
+    curr_names <- accumulated_names()
+    
+    for (i in 1:nrow(new_files)) {
+      # Ignore files with duplicate names in the current list
+      if (!(new_files$name[i] %in% curr_names)) {
+        dest <- file.path(merge_temp_dir, new_files$name[i])
+        file.copy(new_files$datapath[i], dest, overwrite = TRUE)
+        curr_paths <- c(curr_paths, dest)
+        curr_names <- c(curr_names, new_files$name[i])
       }
-    }, add = TRUE)
+    }
+    accumulated_files(curr_paths)
+    accumulated_names(curr_names)
+  })
+  
+  output$accumulated_files_ui <- renderUI({
+    names <- accumulated_names()
+    if (length(names) == 0) return(NULL)
+    div(style = "margin-bottom: 15px; background-color: #f8f9fa; padding: 10px; border-radius: 5px; border: 1px solid #dee2e6;",
+        strong(icon("file-csv"), " Currently loaded files:"),
+        tags$ul(style = "padding-left: 20px; font-size: 13px; color: #555; margin-bottom: 0;",
+                lapply(names, function(n) tags$li(n)))
+    )
+  })
+  
+  observeEvent(input$reset_merge_btn, {
+    accumulated_files(character(0))
+    accumulated_names(character(0))
+    shinyjs::reset("merge_files")
+    unlink(list.files(merge_temp_dir, full.names = TRUE))
+  })
+  
+  merged_data <- reactive({
+    req(length(accumulated_files()) > 0)
     
     tryCatch({
-      files <- input$merge_files$datapath
+      files <- accumulated_files()
       df_list <- lapply(files, function(f) {
         read_csv(f, show_col_types = FALSE)
       })
@@ -601,10 +713,13 @@ server <- function(input, output, session) {
   })
   
   output$merge_download_ui <- renderUI({
-    if (!is.null(merged_data())) {
-      downloadButton("download_merged_csv", "Download Merged CSV", class = "btn-primary btn-lg")
+    if (!is.null(merged_data()) && length(accumulated_files()) > 0) {
+      div(style = "display: flex; gap: 10px; align-items: center;",
+          downloadButton("download_merged_csv", "Download Merged CSV", class = "btn-primary btn-lg"),
+          actionButton("reset_merge_btn", "Reset Files", icon = icon("trash"), class = "btn-danger")
+      )
     } else {
-      p(style = "color: #777;", "Download button will appear once files are merged.")
+      p(style = "color: #777;", "Download and Reset buttons will appear once files are loaded.")
     }
   })
   
