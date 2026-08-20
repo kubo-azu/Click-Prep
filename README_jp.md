@@ -1,4 +1,4 @@
-# 🛟 Click-Prep：Click-qPCR用データ前処理ツール (version 1.2.0)
+# 🛟 Click-Prep：Click-qPCR用データ前処理ツール (version 1.2.1)
 
 Click-Prepは，qPCR装置から出力された表形式データを，[Click-qPCR](https://kubo-azu.shinyapps.io/Click-qPCR/)の標準入力形式へ変換するR/Shinyアプリケーションです。遺伝子発現およびDNAコピー数の相対定量ワークフローに対応します。
 
@@ -16,7 +16,7 @@ Click-PrepはClick-qPCR用の入力データを作成します。下流解析ア
 
 ## 🌟 主な機能
 
-- **柔軟なファイルインポート：** `.csv`，`.txt`，`.tsv`，`.xlsx`ファイルを読み込めます。列ヘッダーより上にある装置由来のメタデータ行を除外できます。
+- **柔軟なファイルインポート：** `.csv`，`.txt`，`.tsv`，`.xls`，`.xlsx`ファイルを読み込めます。列ヘッダーより上にある装置由来のメタデータ行を除外できます。
 - **インタラクティブな列マッピング：** 装置固有の列を，必須フィールドの`sample`，`group`，`gene`，`Cq`へマッピングします。
 - **実験群の手動割り当て：** 装置出力にgroup列がない場合，アプリ上で実験群を定義し，サンプルへ割り当てられます。このワークフローでは，sample・target・Cqに相当する3列があれば入力できます。
 - **レプリケート測定値の手動確認：** レプリケート単位の測定値を表示し，選択した行を除外できます。Click-Prepは外れ値を自動検出・分類しません。
@@ -36,7 +36,7 @@ Click-PrepはClick-qPCR用の入力データを作成します。下流解析ア
 
 ### Import and Column Mapping
 
-1. qPCR装置の出力ファイルをCSV，TXT，TSV，またはXLSX形式でアップロードします。
+1. qPCR装置の出力ファイルをCSV，TXT，TSV，XLS，またはXLSX形式でアップロードします。
 2. 列ヘッダーより上に装置由来の情報がある場合は、**Skip first N rows (metadata)**で除外する行数を指定します。
 3. 入力ファイルの列を`sample`，`group`，`gene`，`Cq`へマッピングします。
 4. group情報がない場合は，**[Assign groups manually]**を選択し，実験群を定義してすべてのサンプルへ割り当てます。
@@ -72,6 +72,7 @@ Click-Prepは，外れ値の自動判定や，測定値が実験上の品質基�
 ## 重要な適用範囲と制限事項
 
 - Click-Prepが処理するのは表形式のCq出力です。生の蛍光データや増幅曲線は処理しません。
+- 装置固有のqPCR実験ファイル，RDML/XMLファイル，レポートファイルは直接読み込めません。装置ソフトウェアから，サンプル識別子，標的名，Cq値を含むコンマ区切りCSV，タブ区切りTXT/TSV，またはXLS/XLSX形式で出力してください。
 - 増幅効率，融解曲線，各種コントロール，referenceとtargetの適切性，アッセイの妥当性は評価しません。
 - 外れ値の自動検出や除外閾値の決定は行いません。
 
@@ -83,21 +84,76 @@ Click-Prepは，アップロードされたqPCRデータを第三者へ意図的
 
 ## ローカルインストール
 
-Rをインストールし，必要なパッケージを導入します。
+再現性のあるローカル実行には，R 4.6.1，Git，および`renv`を使用します。RStudioは任意ですが，プロジェクトを開いて実行する場合に便利です。
 
-```r
-install.packages(c("shiny", "shinyjs", "readr", "readxl", "dplyr", "DT"))
-```
+### 1. リポジトリをクローンする
 
-リポジトリをクローンし，アプリケーションを実行します。
+ターミナルで次のコマンドを実行します。
 
 ```sh
 git clone https://github.com/kubo-azu/Click-Prep.git
 cd Click-Prep
 ```
 
+### 2. R 4.6.1でプロジェクトを開く
+
+RStudioを使用する場合は，クローンしたフォルダ内の`Click-Prep.Rproj`を開きます。複数のRバージョンを管理している場合は，R 4.6.1が選択されていることを確認してください。
+
+Rコンソールでは次のコマンドで使用中のバージョンを確認できます。
+
+```r
+R.version.string
+```
+
+### 3. パッケージ環境を復元する
+
+Rコンソールで次のコマンドを実行します。`renv`が未インストールの場合のみ，最初にインストールします。
+
+```r
+if (!requireNamespace("renv", quietly = TRUE)) {
+  install.packages("renv")
+}
+renv::restore()
+```
+
+この操作により，`renv.lock`に記録されたパッケージがプロジェクト専用ライブラリへインストールされます。
+
+### 4. Click-Prepを起動する
+
+復元が完了したら，Rコンソールで次のコマンドを実行します。
+
 ```r
 shiny::runApp()
+```
+
+表示されたローカルURLをブラウザで開きます。RStudioでは通常，Viewerまたはブラウザが自動的に開きます。
+
+### GitHubから直接実行する簡易方法
+
+リポジトリをクローンせずに試す場合は，次の方法でも起動できます。
+
+```r
+if (!requireNamespace("shiny", quietly = TRUE)) {
+  install.packages("shiny")
+}
+shiny::runGitHub("kubo-azu/Click-Prep")
+```
+
+`shiny::runGitHub()`は`renv.lock`に記録されたパッケージ環境を自動復元しないため，再現性を重視する場合は，上記のクローンと`renv::restore()`を用いる方法を推奨します。
+
+### ローカル実行時のトラブルシューティング
+
+アプリが起動しない場合や，プロジェクトライブラリと`renv.lock`の不一致が表示される場合は，R 4.6.1が有効になっていることを確認し，次を実行します。
+
+```r
+renv::restore()
+renv::status()
+```
+
+`renv`自体が不整合と表示される場合は，次を実行してRを再起動した後，もう一度`renv::restore()`を実行してください。
+
+```r
+renv::restore(packages = "renv")
 ```
 
 ## 🔧 ライセンス
